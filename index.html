@@ -46,10 +46,10 @@
         <button id="submitButton" disabled>Submit Screenshot</button>
         <div id="status"></div>
     </div>
-
+    
     <script>
-        const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbx6f6zabGntalDkp4N9gQcD2XZHKK05pa3Ppmgz6Z09sMEMq6lm2SkRCd4O3RSu3FXCpw/exec'; 
-
+        const SCRIPT_URL = 'YOUR_APPS_SCRIPT_URL_HERE'; 
+    
         const studentNameInput = document.getElementById('studentName');
         const pasteArea = document.getElementById('paste-area');
         const previewImage = document.getElementById('preview');
@@ -57,28 +57,23 @@
         const statusDiv = document.getElementById('status');
         const titleElement = document.getElementById('assignment-title');
         const taskElement = document.getElementById('task-description');
-
+    
         let imageDataUrl = null;
         
-        // --- NEW: Read all URL parameters ---
         const urlParams = new URLSearchParams(window.location.search);
         const assignmentIdParam = urlParams.get('assignmentId') || 'Screenshot Submission';
         const subIdsParam = urlParams.get('subIds') || 'General Task';
         const question1Param = urlParams.get('question1') || 'Paste your screenshot below.';
-
-        // --- NEW: Display the contextual info on the page ---
-        titleElement.textContent = subIdsParam; // Use sub-assignment as the prominent title
-        // Replace markdown-like emoji codes for proper display
+    
+        titleElement.textContent = subIdsParam;
         const formattedQuestion = question1Param.replace(/❗/g, '<span class="emoji">❗</span>');
         taskElement.innerHTML = `<p>${formattedQuestion}</p>`;
-
-
-        // --- Event Listeners and Functions (no changes below this line) ---
+    
         window.addEventListener('paste', handlePaste);
         pasteArea.addEventListener('click', () => navigator.clipboard.readText().then(text => {!text && (pasteArea.querySelector('p').textContent = 'Paste area is active. Press Ctrl+V.')}));
         submitButton.addEventListener('click', handleSubmit);
         studentNameInput.addEventListener('input', checkFormState);
-
+    
         function handlePaste(event) {
             const items = (event.clipboardData || window.clipboardData).items;
             let imageFile = null;
@@ -93,12 +88,11 @@
         }
         
         function checkFormState() { submitButton.disabled = !(studentNameInput.value.trim() && imageDataUrl); }
-
+    
         function handleSubmit() {
             if (!studentNameInput.value.trim() || !imageDataUrl) return;
             submitButton.disabled = true; statusDiv.textContent = 'Submitting...'; statusDiv.style.color = 'black';
-
-            // --- NEW: Payload includes all new parameters ---
+    
             const payload = {
                 studentName: studentNameInput.value.trim(),
                 imageData: imageDataUrl,
@@ -106,14 +100,41 @@
                 subIds: subIdsParam,
                 question1: question1Param
             };
-
+    
             fetch(SCRIPT_URL, { method: 'POST', mode: 'cors', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify(payload) })
             .then(res => res.json())
-            .then(res => { if (res.status === 'success') { statusDiv.textContent = 'Success! Screenshot submitted.'; statusDiv.style.color = 'green'; resetForm(); } else { throw new Error(res.message); } })
+            .then(result => {
+                // --- THIS IS THE CHANGE ---
+                if (result.status === 'success') {
+                    statusDiv.style.color = 'green';
+                    // Check if a valid score was returned
+                    if (result.score && result.score.includes('/')) {
+                        statusDiv.innerHTML = `Success! Your submission was received.<br><strong>Extracted Score: ${result.score}</strong>`;
+                    } else {
+                        // Fallback message if score wasn't found
+                        statusDiv.textContent = 'Success! Your submission was received.';
+                    }
+                    resetForm();
+                } else { 
+                    throw new Error(result.message); 
+                }
+            })
             .catch(err => { statusDiv.textContent = `Error: ${err.message}`; statusDiv.style.color = 'red'; submitButton.disabled = false; });
         }
         
-        function resetForm() { studentNameInput.value = ''; previewImage.src = ''; previewImage.style.display = 'none'; pasteArea.querySelector('p').style.display = 'block'; pasteArea.classList.remove('has-image'); imageDataUrl = null; submitButton.disabled = true; }
+        function resetForm() {
+            // We add a delay to allow the student to read the success message
+            setTimeout(() => {
+                studentNameInput.value = '';
+                previewImage.src = '';
+                previewImage.style.display = 'none';
+                pasteArea.querySelector('p').style.display = 'block';
+                pasteArea.classList.remove('has-image');
+                imageDataUrl = null;
+                submitButton.disabled = true;
+                statusDiv.textContent = ''; // Clear the status message
+            }, 4000); // Keep message on screen for 4 seconds
+        }
     </script>
 </body>
 </html>
