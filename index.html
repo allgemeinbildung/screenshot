@@ -49,7 +49,7 @@
         </div>
         
         <div id="paste-area">
-            <p>Klicke hier und füge deinen Screenshot ein (Ctrl+V)</p>
+            <p>Klicke hier und füge deinen Screenshot mit der Gesamtpunkzahl ein (Ctrl+V)</p>
             <img id="preview" style="display: none;" alt="Screenshot Vorschau"/>
         </div>
 
@@ -77,7 +77,7 @@
         const urlParams = new URLSearchParams(window.location.search);
         const assignmentIdParam = urlParams.get('assignmentId') || 'Screenshot Abgabe';
         const subIdsParam = urlParams.get('subIds') || 'Abgabe Punktzahl';
-        const question1Param = urlParams.get('question1') || 'Füge deinen Screenshot unten ein.';
+        const question1Param = urlParams.get('question1') || 'Füge deinen Screenshot mit der Gesamtpunktzahl unten ein.';
 
         titleElement.textContent = subIdsParam;
         questionElement.innerHTML = question1Param.replace(/❗/g, '<span class="emoji">❗</span>');
