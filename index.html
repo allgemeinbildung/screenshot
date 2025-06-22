@@ -6,12 +6,18 @@
     <title>Submit Screenshot</title>
     <style>
         body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background-color: #f0f2f5; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; padding: 20px; box-sizing: border-box; }
-        .container { background-color: white; padding: 2rem; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); text-align: center; width: 100%; max-width: 500px; }
-        h2 { margin-top: 0; color: #1c1e21; }
+        .container { background-color: white; padding: 2rem; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); text-align: center; width: 100%; max-width: 600px; }
+        h2 { margin-top: 0; color: #1c1e21; font-size: 1.2rem; }
+        /* NEW: Styles for the task description */
+        .task-description { background-color: #f7f7f7; border-left: 4px solid #1877f2; padding: 1rem; margin-bottom: 1.5rem; text-align: left; border-radius: 0 4px 4px 0; }
+        .task-description p { margin: 0; }
+        .task-description strong { color: #0d3d82; }
+        .task-description em { color: #555; }
+        .task-description .emoji { font-style: normal; } /* For the warning emoji */
         #paste-area { border: 2px dashed #ccd0d5; border-radius: 8px; padding: 2rem; margin: 1.5rem 0; cursor: pointer; transition: background-color 0.3s; }
         #paste-area.has-image { border-style: solid; border-color: #4CAF50; }
         #paste-area p { margin: 0; color: #606770; }
-        #preview { max-width: 100%; max-height: 200px; margin-top: 1rem; border-radius: 4px; }
+        #preview { max-width: 100%; max-height: 200px; margin-top: 1rem; border-radius: 4px; border: 1px solid #ddd; }
         .form-group { margin-bottom: 1.5rem; text-align: left;}
         label { display: block; margin-bottom: 0.5rem; font-weight: 600; color: #4b4f56; }
         input[type="text"] { width: 100%; padding: 0.75rem; box-sizing: border-box; border: 1px solid #ccd0d5; border-radius: 6px; font-size: 1rem; }
@@ -23,7 +29,10 @@
 <body>
 
     <div class="container">
-        <h2>Submit Test Screenshot</h2>
+        <h2 id="assignment-title"></h2>
+        
+        <div id="task-description"></div>
+
         <div class="form-group">
             <label for="studentName">Your Full Name:</label>
             <input type="text" id="studentName" required placeholder="Enter your name here...">
@@ -39,133 +48,72 @@
     </div>
 
     <script>
-        // IMPORTANT: Paste the Google Apps Script URL you deployed in Step 1.
-        const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbx6f6zabGntalDkp4N9gQcD2XZHKK05pa3Ppmgz6Z09sMEMq6lm2SkRCd4O3RSu3FXCpw/exec'; 
+        const SCRIPT_URL = 'YOUR_APPS_SCRIPT_URL_HERE'; 
 
         const studentNameInput = document.getElementById('studentName');
         const pasteArea = document.getElementById('paste-area');
         const previewImage = document.getElementById('preview');
         const submitButton = document.getElementById('submitButton');
         const statusDiv = document.getElementById('status');
+        const titleElement = document.getElementById('assignment-title');
+        const taskElement = document.getElementById('task-description');
 
         let imageDataUrl = null;
-
-        // --- Event Listeners ---
-
-        // Listen for paste events anywhere on the page
-        window.addEventListener('paste', handlePaste);
         
-        // Also allow clicking the area
-        pasteArea.addEventListener('click', () => {
-             navigator.clipboard.readText().then(text => {
-                if(!text) pasteArea.querySelector('p').textContent = 'Paste area is active. Press Ctrl+V.';
-            });
-        });
+        // --- NEW: Read all URL parameters ---
+        const urlParams = new URLSearchParams(window.location.search);
+        const assignmentIdParam = urlParams.get('assignmentId') || 'Screenshot Submission';
+        const subIdsParam = urlParams.get('subIds') || 'General Task';
+        const question1Param = urlParams.get('question1') || 'Paste your screenshot below.';
 
-        // Listen for clicks on the submit button
+        // --- NEW: Display the contextual info on the page ---
+        titleElement.textContent = subIdsParam; // Use sub-assignment as the prominent title
+        // Replace markdown-like emoji codes for proper display
+        const formattedQuestion = question1Param.replace(/❗/g, '<span class="emoji">❗</span>');
+        taskElement.innerHTML = `<p>${formattedQuestion}</p>`;
+
+
+        // --- Event Listeners and Functions (no changes below this line) ---
+        window.addEventListener('paste', handlePaste);
+        pasteArea.addEventListener('click', () => navigator.clipboard.readText().then(text => {!text && (pasteArea.querySelector('p').textContent = 'Paste area is active. Press Ctrl+V.')}));
         submitButton.addEventListener('click', handleSubmit);
-
-        // Enable/disable button based on input
         studentNameInput.addEventListener('input', checkFormState);
-
-        // --- Functions ---
 
         function handlePaste(event) {
             const items = (event.clipboardData || window.clipboardData).items;
             let imageFile = null;
-
-            for (const item of items) {
-                if (item.type.indexOf('image') !== -1) {
-                    imageFile = item.getAsFile();
-                    break;
-                }
-            }
-
+            for (const item of items) { if (item.type.indexOf('image') !== -1) { imageFile = item.getAsFile(); break; } }
             if (imageFile) {
-                // We found an image! Prevent default paste behavior.
                 event.preventDefault();
-                
-                statusDiv.textContent = 'Image detected!';
-                statusDiv.style.color = 'green';
-
+                statusDiv.textContent = 'Image detected!'; statusDiv.style.color = 'green';
                 const reader = new FileReader();
-                reader.onloadend = () => {
-                    imageDataUrl = reader.result;
-                    previewImage.src = imageDataUrl;
-                    previewImage.style.display = 'block';
-                    pasteArea.querySelector('p').style.display = 'none';
-                    pasteArea.classList.add('has-image');
-                    checkFormState();
-                };
+                reader.onloadend = () => { imageDataUrl = reader.result; previewImage.src = imageDataUrl; previewImage.style.display = 'block'; pasteArea.querySelector('p').style.display = 'none'; pasteArea.classList.add('has-image'); checkFormState(); };
                 reader.readAsDataURL(imageFile);
-            } else {
-                 statusDiv.textContent = 'Pasted content is not an image. Please copy a screenshot.';
-                 statusDiv.style.color = 'red';
-            }
+            } else { statusDiv.textContent = 'Pasted content is not an image. Please copy a screenshot.'; statusDiv.style.color = 'red'; }
         }
         
-        function checkFormState() {
-             // Enable the submit button only if a name is entered and an image is pasted
-            if (studentNameInput.value.trim() && imageDataUrl) {
-                submitButton.disabled = false;
-            } else {
-                submitButton.disabled = true;
-            }
-        }
+        function checkFormState() { submitButton.disabled = !(studentNameInput.value.trim() && imageDataUrl); }
 
         function handleSubmit() {
-            if (!studentNameInput.value.trim() || !imageDataUrl) {
-                statusDiv.textContent = 'Please provide your name and paste a screenshot.';
-                statusDiv.style.color = 'red';
-                return;
-            }
+            if (!studentNameInput.value.trim() || !imageDataUrl) return;
+            submitButton.disabled = true; statusDiv.textContent = 'Submitting...'; statusDiv.style.color = 'black';
 
-            // Disable the button and show a message
-            submitButton.disabled = true;
-            statusDiv.textContent = 'Submitting... Please wait.';
-            statusDiv.style.color = 'black';
-
+            // --- NEW: Payload includes all new parameters ---
             const payload = {
                 studentName: studentNameInput.value.trim(),
-                imageData: imageDataUrl
+                imageData: imageDataUrl,
+                assignmentId: assignmentIdParam,
+                subIds: subIdsParam,
+                question1: question1Param
             };
 
-            fetch(SCRIPT_URL, {
-                method: 'POST',
-                mode: 'cors', // Required for cross-origin requests
-                headers: {
-                    'Content-Type': 'text/plain;charset=utf-8', // Apps Script requirement
-                },
-                body: JSON.stringify(payload)
-            })
-            .then(response => response.json())
-            .then(result => {
-                if (result.status === 'success') {
-                    statusDiv.textContent = 'Success! Screenshot submitted.';
-                    statusDiv.style.color = 'green';
-                    // Reset the form for the next submission
-                    resetForm();
-                } else {
-                    throw new Error(result.message || 'An unknown error occurred on the server.');
-                }
-            })
-            .catch(error => {
-                statusDiv.textContent = `Submission failed: ${error.message}`;
-                statusDiv.style.color = 'red';
-                submitButton.disabled = false; // Re-enable button on failure
-            });
+            fetch(SCRIPT_URL, { method: 'POST', mode: 'cors', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify(payload) })
+            .then(res => res.json())
+            .then(res => { if (res.status === 'success') { statusDiv.textContent = 'Success! Screenshot submitted.'; statusDiv.style.color = 'green'; resetForm(); } else { throw new Error(res.message); } })
+            .catch(err => { statusDiv.textContent = `Error: ${err.message}`; statusDiv.style.color = 'red'; submitButton.disabled = false; });
         }
         
-        function resetForm() {
-            studentNameInput.value = '';
-            previewImage.src = '';
-            previewImage.style.display = 'none';
-            pasteArea.querySelector('p').style.display = 'block';
-            pasteArea.classList.remove('has-image');
-            imageDataUrl = null;
-            submitButton.disabled = true;
-        }
-
+        function resetForm() { studentNameInput.value = ''; previewImage.src = ''; previewImage.style.display = 'none'; pasteArea.querySelector('p').style.display = 'block'; pasteArea.classList.remove('has-image'); imageDataUrl = null; submitButton.disabled = true; }
     </script>
 </body>
 </html>
