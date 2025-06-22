@@ -1,19 +1,18 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="de">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Submit Screenshot</title>
+    <title>Screenshot einreichen</title>
     <style>
         body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background-color: #f0f2f5; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; padding: 20px; box-sizing: border-box; }
         .container { background-color: white; padding: 2rem; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); text-align: center; width: 100%; max-width: 600px; }
         h2 { margin-top: 0; color: #1c1e21; font-size: 1.2rem; }
-        /* NEW: Styles for the task description */
         .task-description { background-color: #f7f7f7; border-left: 4px solid #1877f2; padding: 1rem; margin-bottom: 1.5rem; text-align: left; border-radius: 0 4px 4px 0; }
         .task-description p { margin: 0; }
         .task-description strong { color: #0d3d82; }
         .task-description em { color: #555; }
-        .task-description .emoji { font-style: normal; } /* For the warning emoji */
+        .task-description .emoji { font-style: normal; }
         #paste-area { border: 2px dashed #ccd0d5; border-radius: 8px; padding: 2rem; margin: 1.5rem 0; cursor: pointer; transition: background-color 0.3s; }
         #paste-area.has-image { border-style: solid; border-color: #4CAF50; }
         #paste-area p { margin: 0; color: #606770; }
@@ -23,7 +22,7 @@
         input[type="text"] { width: 100%; padding: 0.75rem; box-sizing: border-box; border: 1px solid #ccd0d5; border-radius: 6px; font-size: 1rem; }
         button { background-color: #1877f2; color: white; width: 100%; padding: 0.75rem 1.5rem; border: none; border-radius: 6px; cursor: pointer; font-size: 1.1rem; font-weight: bold; transition: background-color 0.3s; }
         button:disabled { background-color: #a0a0a0; cursor: not-allowed; }
-        #status { margin-top: 1rem; font-weight: bold; min-height: 1.2em; }
+        #status { margin-top: 1rem; font-weight: bold; min-height: 1.2em; line-height: 1.5; }
     </style>
 </head>
 <body>
@@ -34,22 +33,22 @@
         <div id="task-description"></div>
 
         <div class="form-group">
-            <label for="studentName">Your Full Name:</label>
-            <input type="text" id="studentName" required placeholder="Enter your name here...">
+            <label for="studentName">Dein Code:</label>
+            <input type="text" id="studentName" required placeholder="Gib hier deinen Code ein...">
         </div>
         
         <div id="paste-area">
-            <p>Click here and paste your screenshot (Ctrl+V)</p>
-            <img id="preview" style="display: none;" alt="Screenshot Preview"/>
+            <p>Klicke hier und füge deinen Screenshot ein (Ctrl+V)</p>
+            <img id="preview" style="display: none;" alt="Screenshot Vorschau"/>
         </div>
 
-        <button id="submitButton" disabled>Submit Screenshot</button>
+        <button id="submitButton" disabled>Screenshot einreichen</button>
         <div id="status"></div>
     </div>
-    
+
     <script>
         const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbx6f6zabGntalDkp4N9gQcD2XZHKK05pa3Ppmgz6Z09sMEMq6lm2SkRCd4O3RSu3FXCpw/exec'; 
-    
+
         const studentNameInput = document.getElementById('studentName');
         const pasteArea = document.getElementById('paste-area');
         const previewImage = document.getElementById('preview');
@@ -57,42 +56,42 @@
         const statusDiv = document.getElementById('status');
         const titleElement = document.getElementById('assignment-title');
         const taskElement = document.getElementById('task-description');
-    
+
         let imageDataUrl = null;
         
         const urlParams = new URLSearchParams(window.location.search);
-        const assignmentIdParam = urlParams.get('assignmentId') || 'Screenshot Submission';
-        const subIdsParam = urlParams.get('subIds') || 'General Task';
-        const question1Param = urlParams.get('question1') || 'Paste your screenshot below.';
-    
+        const assignmentIdParam = urlParams.get('assignmentId') || 'Screenshot Abgabe';
+        const subIdsParam = urlParams.get('subIds') || 'Allgemeine Aufgabe';
+        const question1Param = urlParams.get('question1') || 'Füge deinen Screenshot unten ein.';
+
         titleElement.textContent = subIdsParam;
         const formattedQuestion = question1Param.replace(/❗/g, '<span class="emoji">❗</span>');
         taskElement.innerHTML = `<p>${formattedQuestion}</p>`;
-    
+
         window.addEventListener('paste', handlePaste);
-        pasteArea.addEventListener('click', () => navigator.clipboard.readText().then(text => {!text && (pasteArea.querySelector('p').textContent = 'Paste area is active. Press Ctrl+V.')}));
+        pasteArea.addEventListener('click', () => navigator.clipboard.readText().then(text => {!text && (pasteArea.querySelector('p').textContent = 'Bereich ist aktiv. Drücke Ctrl+V zum Einfügen.')}));
         submitButton.addEventListener('click', handleSubmit);
         studentNameInput.addEventListener('input', checkFormState);
-    
+
         function handlePaste(event) {
             const items = (event.clipboardData || window.clipboardData).items;
             let imageFile = null;
             for (const item of items) { if (item.type.indexOf('image') !== -1) { imageFile = item.getAsFile(); break; } }
             if (imageFile) {
                 event.preventDefault();
-                statusDiv.textContent = 'Image detected!'; statusDiv.style.color = 'green';
+                statusDiv.textContent = 'Bild erkannt!'; statusDiv.style.color = 'green';
                 const reader = new FileReader();
                 reader.onloadend = () => { imageDataUrl = reader.result; previewImage.src = imageDataUrl; previewImage.style.display = 'block'; pasteArea.querySelector('p').style.display = 'none'; pasteArea.classList.add('has-image'); checkFormState(); };
                 reader.readAsDataURL(imageFile);
-            } else { statusDiv.textContent = 'Pasted content is not an image. Please copy a screenshot.'; statusDiv.style.color = 'red'; }
+            } else { statusDiv.textContent = 'Der eingefügte Inhalt ist kein Bild. Bitte kopiere einen Screenshot.'; statusDiv.style.color = 'red'; }
         }
         
         function checkFormState() { submitButton.disabled = !(studentNameInput.value.trim() && imageDataUrl); }
-    
+
         function handleSubmit() {
             if (!studentNameInput.value.trim() || !imageDataUrl) return;
-            submitButton.disabled = true; statusDiv.textContent = 'Submitting...'; statusDiv.style.color = 'black';
-    
+            submitButton.disabled = true; statusDiv.textContent = 'Wird übermittelt...'; statusDiv.style.color = 'black';
+
             const payload = {
                 studentName: studentNameInput.value.trim(),
                 imageData: imageDataUrl,
@@ -100,30 +99,35 @@
                 subIds: subIdsParam,
                 question1: question1Param
             };
-    
+
             fetch(SCRIPT_URL, { method: 'POST', mode: 'cors', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify(payload) })
             .then(res => res.json())
             .then(result => {
-                // --- THIS IS THE CHANGE ---
                 if (result.status === 'success') {
-                    statusDiv.style.color = 'green';
-                    // Check if a valid score was returned
+                    // NEUE LOGIK FÜR DAS FEEDBACK
                     if (result.score && result.score.includes('/')) {
-                        statusDiv.innerHTML = `Success! Your submission was received.<br><strong>Extracted Score: ${result.score}</strong>`;
+                        // Fall 1: Punktzahl wurde erfolgreich gefunden
+                        statusDiv.style.color = 'green';
+                        statusDiv.innerHTML = `Erfolgreich übermittelt.<br>Deine Punktzahl wurde als <strong>${result.score}</strong> erfasst.`;
                     } else {
-                        // Fallback message if score wasn't found
-                        statusDiv.textContent = 'Success! Your submission was received.';
+                        // Fall 2: Punktzahl wurde NICHT gefunden. Gib eine genaue Anleitung.
+                        statusDiv.style.color = '#D83B01'; // Orange-Rot für eine Warnung
+                        statusDiv.innerHTML = `Übermittlung erfolgreich, aber die <strong>Gesamtpunktzahl konnte nicht automatisch gelesen werden.</strong><br><br>Bitte mache einen neuen Screenshot und achte darauf, dass der Bereich 'Gesamtpunktzahl' <strong>oben links</strong> auf der Seite 'Zusammenfassung' gut sichtbar ist.`;
                     }
-                    resetForm();
+                    // Wichtig: Das Formular wird erst nach einer Verzögerung zurückgesetzt, damit die Nachricht gelesen werden kann.
+                    resetForm(false); // `false` bedeutet, den Button nicht sofort wieder zu aktivieren
                 } else { 
                     throw new Error(result.message); 
                 }
             })
-            .catch(err => { statusDiv.textContent = `Error: ${err.message}`; statusDiv.style.color = 'red'; submitButton.disabled = false; });
+            .catch(err => {
+                statusDiv.textContent = `Fehler: ${err.message}`; 
+                statusDiv.style.color = 'red'; 
+                submitButton.disabled = false; 
+            });
         }
         
-        function resetForm() {
-            // We add a delay to allow the student to read the success message
+        function resetForm(enableButton = true) {
             setTimeout(() => {
                 studentNameInput.value = '';
                 previewImage.src = '';
@@ -131,9 +135,10 @@
                 pasteArea.querySelector('p').style.display = 'block';
                 pasteArea.classList.remove('has-image');
                 imageDataUrl = null;
-                submitButton.disabled = true;
-                statusDiv.textContent = ''; // Clear the status message
-            }, 4000); // Keep message on screen for 4 seconds
+                // Der Button bleibt deaktiviert, bis ein neues Bild und ein Name vorhanden sind
+                submitButton.disabled = true; 
+                statusDiv.textContent = '';
+            }, 8000); // Nachricht für 8 Sekunden anzeigen
         }
     </script>
 </body>
