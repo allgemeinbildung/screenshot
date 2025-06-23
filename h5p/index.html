@@ -5,56 +5,159 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Screenshot einreichen</title>
     <style>
-        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background-color: #f0f2f5; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; padding: 20px; box-sizing: border-box; }
-        .container { background-color: white; padding: 2rem; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); text-align: center; width: 100%; max-width: 600px; }
-        h2 { margin-top: 0; color: #1c1e21; font-size: 1.2rem; }
-        .task-description { display: flex; align-items: flex-start; gap: 15px; background-color: #f7f7f7; border-left: 4px solid #1877f2; padding: 1rem; margin-bottom: 1.5rem; text-align: left; border-radius: 0 4px 4px 0; }
+        /* General Body & Container */
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; 
+            background-color: #f0f2f5; 
+            margin: 0;
+            padding: 10px;
+            box-sizing: border-box;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 180px; /* Reduced height */
+        }
+        .container { 
+            background-color: white; 
+            padding: 15px; 
+            border-radius: 8px; 
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1); 
+            text-align: center; 
+            width: 100%; 
+            max-width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+        
+        /* Header & Task Description */
+        h2 { 
+            margin: 0 0 5px 0; 
+            color: #1c1e21; 
+            font-size: 0.9rem; 
+            font-weight: 600;
+        }
+        .task-description { 
+            display: flex; 
+            align-items: center; 
+            gap: 10px; 
+            background-color: #f7f7f7; 
+            border-left: 3px solid #1877f2; 
+            padding: 8px; 
+            margin-bottom: 10px; 
+            text-align: left; 
+            border-radius: 4px; 
+            font-size: 0.8rem;
+        }
         .task-description p { margin: 0; flex-grow: 1; }
-        .task-description strong { color: #0d3d82; }
-        #example-thumbnail { width: 100px; cursor: pointer; border: 1px solid #ccc; border-radius: 4px; transition: transform 0.2s; }
-        #example-thumbnail:hover { transform: scale(1.05); }
-        #paste-area { border: 2px dashed #ccd0d5; border-radius: 8px; padding: 2rem; margin: 1.5rem 0; cursor: pointer; transition: background-color 0.3s; }
-        #paste-area.has-image { border-style: solid; border-color: #4CAF50; }
-        #paste-area p { margin: 0; color: #606770; }
-        #preview { max-width: 100%; max-height: 200px; margin-top: 1rem; border-radius: 4px; border: 1px solid #ddd; }
-        .form-group { margin-bottom: 1.5rem; text-align: left;}
-        label { display: block; margin-bottom: 0.5rem; font-weight: 600; color: #4b4f56; }
-        input[type="text"] { width: 100%; padding: 0.75rem; box-sizing: border-box; border: 1px solid #ccd0d5; border-radius: 6px; font-size: 1rem; }
-        button { background-color: #1877f2; color: white; width: 100%; padding: 0.75rem 1.5rem; border: none; border-radius: 6px; cursor: pointer; font-size: 1.1rem; font-weight: bold; }
-        button:disabled { background-color: #a0a0a0; cursor: not-allowed; }
-        #status { margin-top: 1rem; font-weight: bold; min-height: 1.2em; line-height: 1.5; }
+        #example-thumbnail { 
+            width: 40px; /* Smaller thumbnail */
+            height: 40px;
+            object-fit: cover;
+            border: 1px solid #ccc; 
+            border-radius: 4px; 
+        }
 
-        /* Stile für das Modal-Fenster (Grossansicht) */
-        #modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.8); justify-content: center; align-items: center; }
-        #modal-content { max-width: 80%; max-height: 80%; }
-        #modal.show { display: flex; }
+        /* Core Form Layout */
+        .form-layout {
+            display: flex;
+            gap: 10px;
+            align-items: stretch; /* Make items same height */
+            margin-bottom: 8px;
+        }
+
+        /* Input & Paste Area */
+        input[type="text"] { 
+            flex: 1 1 35%; /* Takes up ~35% of space */
+            padding: 8px; 
+            box-sizing: border-box; 
+            border: 1px solid #ccd0d5; 
+            border-radius: 6px; 
+            font-size: 0.8rem;
+        }
+        #paste-area { 
+            flex: 1 1 65%; /* Takes up ~65% of space */
+            border: 2px dashed #ccd0d5; 
+            border-radius: 8px; 
+            padding: 8px;
+            cursor: pointer; 
+            transition: background-color 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative; /* For preview positioning */
+            min-height: 38px; /* Set a min height */
+        }
+        #paste-area.has-image { 
+            border-style: solid; 
+            border-color: #4CAF50; 
+            padding: 2px; /* Reduce padding when image is present */
+        }
+        #paste-area p { 
+            margin: 0; 
+            color: #606770; 
+            font-size: 0.75rem;
+            text-align: center;
+        }
+        #preview { 
+            max-width: 100%; 
+            max-height: 100%; /* Fill the container */
+            border-radius: 6px; 
+            object-fit: contain; /* Ensure aspect ratio is maintained */
+            position: absolute; /* Overlay on top of the paste area */
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+        }
+
+        /* Button & Status */
+        button { 
+            background-color: #1877f2; 
+            color: white; 
+            width: 100%; 
+            padding: 8px 12px; /* Reduced padding */
+            border: none; 
+            border-radius: 6px; 
+            cursor: pointer; 
+            font-size: 0.9rem; /* Smaller font */
+            font-weight: bold; 
+        }
+        button:disabled { 
+            background-color: #a0a0a0; 
+            cursor: not-allowed; 
+        }
+        #status { 
+            margin-top: 5px; 
+            font-weight: bold; 
+            font-size: 0.75rem;
+            min-height: 1.2em;
+            line-height: 1.3;
+        }
     </style>
 </head>
 <body>
-    <div id="modal">
-        <img id="modal-content" src="gesamt.png" alt="Beispiel-Screenshot Grossansicht">
-    </div>
-
     <div class="container">
-        <h2 id="assignment-title"></h2>
-        
-        <div id="task-description">
-            <p id="question-text"></p>
-            <img id="example-thumbnail" src="gesamt.png" alt="Beispiel-Screenshot">
-        </div>
-
-        <div class="form-group">
-            <label for="studentName">Dein Identifikationscode:</label>
-            <input type="text" id="studentName" required placeholder="Gib hier deinen Code ein...">
+        <div>
+            <h2 id="assignment-title"></h2>
+            <div class="task-description">
+                <p id="question-text"></p>
+                <img id="example-thumbnail" src="gesamt.png" alt="Beispiel">
+            </div>
         </div>
         
-        <div id="paste-area">
-            <p>Klicke hier und füge deinen Screenshot mit der Gesamtpunkzahl ein (Ctrl+V)</p>
-            <img id="preview" style="display: none;" alt="Screenshot Vorschau"/>
+        <div>
+            <div class="form-layout">
+                <input type="text" id="studentName" required placeholder="Dein Identifikationscode...">
+                <div id="paste-area">
+                    <p>Hier Screenshot einfügen (Ctrl+V)</p>
+                    <img id="preview" style="display: none;" alt="Vorschau"/>
+                </div>
+            </div>
+            <button id="submitButton" disabled>Einreichen</button>
+            <div id="status"></div>
         </div>
-
-        <button id="submitButton" disabled>Screenshot einreichen</button>
-        <div id="status"></div>
     </div>
 
     <script>
@@ -67,30 +170,26 @@
         const statusDiv = document.getElementById('status');
         const titleElement = document.getElementById('assignment-title');
         const questionElement = document.getElementById('question-text');
-
-        // NEU: Elemente für das Beispielbild-Modal
-        const exampleThumbnail = document.getElementById('example-thumbnail');
-        const modal = document.getElementById('modal');
-
+        
         let imageDataUrl = null;
         
         const urlParams = new URLSearchParams(window.location.search);
         const assignmentIdParam = urlParams.get('assignmentId') || 'Screenshot Abgabe';
         const subIdsParam = urlParams.get('subIds') || 'Abgabe Punktzahl';
-        const question1Param = urlParams.get('question1') || 'Füge deinen Screenshot mit der Gesamtpunktzahl unten ein.';
+        const question1Param = urlParams.get('question1') || 'Füge deinen Screenshot mit der Gesamtpunktzahl ein.';
 
         titleElement.textContent = subIdsParam;
         questionElement.innerHTML = question1Param.replace(/❗/g, '<span class="emoji">❗</span>');
 
         // --- Event Listeners ---
         window.addEventListener('paste', handlePaste);
-        pasteArea.addEventListener('click', () => navigator.clipboard.readText().then(text => {!text && (pasteArea.querySelector('p').textContent = 'Bereich ist aktiv. Drücke Ctrl+V zum Einfügen.')}));
+        pasteArea.addEventListener('click', () => {
+             if (!imageDataUrl) {
+                pasteArea.querySelector('p').textContent = 'Bereit für Ctrl+V.';
+             }
+        });
         submitButton.addEventListener('click', handleSubmit);
         studentNameInput.addEventListener('input', checkFormState);
-
-        // NEU: Event Listeners für das Modal
-        exampleThumbnail.addEventListener('click', () => { modal.classList.add('show'); });
-        modal.addEventListener('click', () => { modal.classList.remove('show'); });
 
         function handlePaste(event) {
             const items = (event.clipboardData || window.clipboardData).items;
@@ -100,12 +199,24 @@
                 event.preventDefault();
                 statusDiv.textContent = 'Bild erkannt!'; statusDiv.style.color = 'green';
                 const reader = new FileReader();
-                reader.onloadend = () => { imageDataUrl = reader.result; previewImage.src = imageDataUrl; previewImage.style.display = 'block'; pasteArea.querySelector('p').style.display = 'none'; pasteArea.classList.add('has-image'); checkFormState(); };
+                reader.onloadend = () => { 
+                    imageDataUrl = reader.result; 
+                    previewImage.src = imageDataUrl; 
+                    previewImage.style.display = 'block'; 
+                    pasteArea.querySelector('p').style.display = 'none'; 
+                    pasteArea.classList.add('has-image'); 
+                    checkFormState(); 
+                };
                 reader.readAsDataURL(imageFile);
-            } else { statusDiv.textContent = 'Der eingefügte Inhalt ist kein Bild. Bitte kopiere einen Screenshot.'; statusDiv.style.color = 'red'; }
+            } else { 
+                statusDiv.textContent = 'Eingefügter Inhalt ist kein Bild.'; 
+                statusDiv.style.color = 'red'; 
+            }
         }
         
-        function checkFormState() { submitButton.disabled = !(studentNameInput.value.trim() && imageDataUrl); }
+        function checkFormState() { 
+            submitButton.disabled = !(studentNameInput.value.trim() && imageDataUrl); 
+        }
 
         function handleSubmit() {
             if (!studentNameInput.value.trim() || !imageDataUrl) return;
@@ -125,10 +236,10 @@
                 if (result.status === 'success') {
                     if (result.score && result.score.includes('/')) {
                         statusDiv.style.color = 'green';
-                        statusDiv.innerHTML = `Erfolgreich übermittelt.<br>Deine Punktzahl wurde als <strong>${result.score}</strong> erfasst.`;
+                        statusDiv.innerHTML = `Erfolgreich! Punktzahl: <strong>${result.score}</strong> erfasst.`;
                     } else {
                         statusDiv.style.color = '#D83B01';
-                        statusDiv.innerHTML = `Übermittlung erfolgreich, aber die <strong>Gesamtpunktzahl konnte nicht automatisch gelesen werden.</strong><br><br>Bitte mache einen neuen Screenshot und achte darauf, dass der Bereich 'Gesamtpunktzahl' (siehe Beispielbild) gut sichtbar ist.`;
+                        statusDiv.innerHTML = `Übermittelt, aber Punktzahl nicht erkannt. Bitte erneut versuchen.`;
                     }
                     resetForm();
                 } else { throw new Error(result.message); }
@@ -146,6 +257,7 @@
                 previewImage.src = '';
                 previewImage.style.display = 'none';
                 pasteArea.querySelector('p').style.display = 'block';
+                pasteArea.querySelector('p').textContent = 'Hier Screenshot einfügen (Ctrl+V)';
                 pasteArea.classList.remove('has-image');
                 imageDataUrl = null;
                 submitButton.disabled = true; 
