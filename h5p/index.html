@@ -35,10 +35,7 @@
         }
 
         /* Left Column: All Controls */
-        .left-column {
-            flex: 1 1 50%;
-            gap: 8px;
-        }
+        .left-column { flex: 1 1 50%; gap: 8px; }
         .left-column h2 { margin: 0; color: #1c1e21; font-size: 0.9rem; font-weight: 600; }
         .left-column .info-text { font-size: 0.8rem; margin: 0; line-height: 1.3; color: #4b4f56; }
         .left-column label { display: block; margin-bottom: 2px; font-weight: 600; color: #4b4f56; font-size: 0.75rem; }
@@ -58,31 +55,41 @@
             cursor: pointer;
             position: relative;
             background-color: #f7faff;
-            overflow: hidden;
+            overflow: hidden; /* Hide parts of the lens that go outside */
         }
         #paste-area p { margin: 0; padding: 10px; color: #0d3d82; font-size: 0.9rem; font-weight: 500; text-align: center; }
-        #paste-area.has-image { border-style: solid; border-color: #4CAF50; background-color: #fff; cursor: crosshair; }
+        #paste-area.has-image { border-style: solid; border-color: #4CAF50; background-color: #f0f0f0; cursor: crosshair; }
         #paste-area.has-image p { display: none; }
         #preview { 
             display: none;
             width: 100%; height: 100%;
-            object-fit: contain; /* Fit the entire image inside */
+            object-fit: contain;
         }
 
-        /* --- NEW: Zoom/Loupe Styles --- */
+        /* --- Zoom/Loupe Styles --- */
         #zoom-result {
-            display: none; /* Hidden by default */
+            display: none;
             position: absolute;
-            top: 0px;
-            left: -216px; /* Position it to the left of the paste-area */
+            top: -17px; /* Align with top of container */
+            left: -232px; /* Position it to the left of the paste-area */
             width: 200px;
             height: 200px;
             border: 2px solid #1877f2;
-            border-radius: 50%; /* Circular lens */
+            border-radius: 50%; /* Circular result pane */
             background-repeat: no-repeat;
             box-shadow: 0 5px 15px rgba(0,0,0,0.2);
             z-index: 100;
-            pointer-events: none; /* So it doesn't interfere with mouse events */
+            pointer-events: none;
+        }
+        /* NEW: The visible lens on the image */
+        #zoom-lens {
+            display: none;
+            position: absolute;
+            width: 80px;  /* Size of the lens */
+            height: 80px;
+            border: 2px solid #1877f2;
+            pointer-events: none; /* Lets mouse events pass through to the image */
+            z-index: 99;
         }
     </style>
 </head>
@@ -105,13 +112,13 @@
 
         <div class="column right-column" id="paste-area">
              <div id="zoom-result"></div>
-            <p>Screenshot hier einfügen<br>(Ctrl+V)</p>
+             <div id="zoom-lens"></div> <p>Screenshot hier einfügen<br>(Ctrl+V)</p>
             <img id="preview" alt="Screenshot Vorschau"/>
         </div>
     </div>
 
     <script>
-        // --- Existing Elements ---
+        // --- Elements ---
         const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbx6f6zabGntalDkp4N9gQcD2XZHKK05pa3Ppmgz6Z09sMEMq6lm2SkRCd4O3RSu3FXCpw/exec'; 
         const studentNameInput = document.getElementById('studentName');
         const pasteArea = document.getElementById('paste-area');
@@ -120,12 +127,13 @@
         const statusDiv = document.getElementById('status');
         const titleElement = document.getElementById('assignment-title');
         const questionElement = document.getElementById('question-text');
-
-        // --- New Zoom Element ---
         const zoomResult = document.getElementById('zoom-result');
+        const zoomLens = document.getElementById('zoom-lens'); // New lens element
         
         let imageDataUrl = null;
+        let eventListenersAttached = false; // Flag to manage listeners
 
+        // --- URL Params & Initial Setup ---
         const urlParams = new URLSearchParams(window.location.search);
         const assignmentIdParam = urlParams.get('assignmentId') || 'Screenshot Abgabe';
         const subIdsParam = urlParams.get('subIds') || 'Abgabe Punktzahl';
@@ -134,7 +142,7 @@
         titleElement.textContent = subIdsParam;
         questionElement.innerHTML = question1Param;
         
-        // --- Paste & Submit Logic (mostly unchanged) ---
+        // --- Core Functions ---
         window.addEventListener('paste', handlePaste);
         submitButton.addEventListener('click', handleSubmit);
         studentNameInput.addEventListener('input', checkFormState);
@@ -153,16 +161,15 @@
                     previewImage.style.display = 'block';
                     pasteArea.classList.add('has-image');
                     checkFormState();
-                    initializeZoom(imageDataUrl); // <<< NEW: Activate zoom functionality
+                    initializeZoom(imageDataUrl); 
                 };
                 reader.readAsDataURL(imageFile);
-            } else { statusDiv.textContent = 'Dies ist kein Bild.'; statusDiv.style.color = 'red'; }
+            }
         }
         
+        // Unchanged from previous version
         function checkFormState() { submitButton.disabled = !(studentNameInput.value.trim() && imageDataUrl); }
-
         function handleSubmit() {
-            // ... (handleSubmit function is unchanged from previous version)
             if (!studentNameInput.value.trim() || !imageDataUrl) return;
             submitButton.disabled = true; statusDiv.textContent = 'Wird übermittelt...'; statusDiv.style.color = 'black';
             const payload = { studentName: studentNameInput.value.trim(), imageData: imageDataUrl, assignmentId: assignmentIdParam, subIds: subIdsParam, question1: question1Param };
@@ -188,7 +195,6 @@
         }
         
         function resetForm() {
-            // ... (resetForm is mostly unchanged)
             setTimeout(() => {
                 studentNameInput.value = '';
                 previewImage.src = '';
@@ -197,57 +203,75 @@
                 imageDataUrl = null;
                 submitButton.disabled = true; 
                 statusDiv.textContent = '';
-                destroyZoom(); // <<< NEW: Deactivate zoom functionality
+                destroyZoom();
             }, 8000);
         }
 
-        // --- NEW: ZOOM FUNCTIONALITY ---
+        // --- ZOOM FUNCTIONALITY ---
+        let ratioX, ratioY;
 
         function initializeZoom(imageUrl) {
-            // Get the natural (original) size of the image first
+            if (eventListenersAttached) return; // Don't attach listeners multiple times
+
             const originalImage = new Image();
             originalImage.onload = function() {
-                const naturalWidth = this.width;
-                const naturalHeight = this.height;
-
-                // Set the background of our zoom pane
-                zoomResult.style.backgroundImage = `url('${imageUrl}')`;
+                ratioX = this.width / previewImage.clientWidth;
+                ratioY = this.height / previewImage.clientHeight;
                 
-                // Calculate the magnified background size
-                const ratioX = naturalWidth / previewImage.clientWidth;
-                const ratioY = naturalHeight / previewImage.clientHeight;
-                zoomResult.style.backgroundSize = `${naturalWidth}px ${naturalHeight}px`;
+                zoomResult.style.backgroundImage = `url('${imageUrl}')`;
+                zoomResult.style.backgroundSize = `${this.width}px ${this.height}px`;
 
-                // Add event listeners to the paste area
                 pasteArea.addEventListener('mousemove', moveLens);
-                pasteArea.addEventListener('mouseenter', () => { zoomResult.style.display = 'block'; });
-                pasteArea.addEventListener('mouseleave', () => { zoomResult.style.display = 'none'; });
-
-                function moveLens(e) {
-                    e.preventDefault();
-                    
-                    // Get cursor position relative to the preview image
-                    const rect = e.target.getBoundingClientRect();
-                    let x = e.clientX - rect.left;
-                    let y = e.clientY - rect.top;
-
-                    // Calculate background position for the zoom pane
-                    // The position is moved negatively, proportional to the cursor's location
-                    let bgPosX = -(x * ratioX - zoomResult.clientWidth / 2);
-                    let bgPosY = -(y * ratioY - zoomResult.clientHeight / 2);
-                    
-                    zoomResult.style.backgroundPosition = `${bgPosX}px ${bgPosY}px`;
-                }
+                pasteArea.addEventListener('mouseenter', showZoom);
+                pasteArea.addEventListener('mouseleave', hideZoom);
+                eventListenersAttached = true;
             };
             originalImage.src = imageUrl;
         }
 
+        const showZoom = () => {
+            zoomResult.style.display = 'block';
+            zoomLens.style.display = 'block';
+        };
+
+        const hideZoom = () => {
+            zoomResult.style.display = 'none';
+            zoomLens.style.display = 'none';
+        };
+
+        function moveLens(e) {
+            e.preventDefault();
+            const rect = previewImage.getBoundingClientRect();
+            let x = e.clientX - rect.left;
+            let y = e.clientY - rect.top;
+
+            // Position the LENS element
+            let lensX = x - (zoomLens.offsetWidth / 2);
+            let lensY = y - (zoomLens.offsetHeight / 2);
+            
+            // Boundary checks for the LENS
+            if (lensX < 0) lensX = 0;
+            if (lensY < 0) lensY = 0;
+            if (lensX > previewImage.clientWidth - zoomLens.offsetWidth) lensX = previewImage.clientWidth - zoomLens.offsetWidth;
+            if (lensY > previewImage.clientHeight - zoomLens.offsetHeight) lensY = previewImage.clientHeight - zoomLens.offsetHeight;
+
+            zoomLens.style.left = lensX + 'px';
+            zoomLens.style.top = lensY + 'px';
+
+            // Calculate background position for the RESULT pane
+            let bgPosX = -(x * ratioX - zoomResult.clientWidth / 2);
+            let bgPosY = -(y * ratioY - zoomResult.clientHeight / 2);
+            
+            zoomResult.style.backgroundPosition = `${bgPosX}px ${bgPosY}px`;
+        }
+
         function destroyZoom() {
-            // To prevent memory leaks, we should remove the listeners when the form resets
-            // A simple way is to replace the node with a clone of itself
-            pasteArea.parentNode.replaceChild(pasteArea.cloneNode(true), pasteArea);
-            // We also need to hide the zoom pane
-            document.getElementById('zoom-result').style.display = 'none';
+            if (!eventListenersAttached) return;
+            pasteArea.removeEventListener('mousemove', moveLens);
+            pasteArea.removeEventListener('mouseenter', showZoom);
+            pasteArea.removeEventListener('mouseleave', hideZoom);
+            hideZoom();
+            eventListenersAttached = false;
         }
     </script>
 </body>
