@@ -8,11 +8,11 @@
         /* General Body & Root Container */
         body { 
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; 
-            background-color: transparent; /* Allows iframe background to show */
+            background-color: transparent;
             margin: 0;
             padding: 10px;
             box-sizing: border-box;
-            height: 200px; /* Set a fixed height for the content */
+            height: 200px;
         }
         .container { 
             background-color: white; 
@@ -21,41 +21,100 @@
             box-shadow: 0 2px 8px rgba(0,0,0,0.1); 
             width: 100%; 
             height: 100%;
-            display: flex; /* Key for two-column layout */
+            display: flex;
             gap: 15px;
             box-sizing: border-box;
+            align-items: stretch; /* Make columns equal height */
         }
 
-        /* Left Column: Content & Controls */
-        .left-column {
-            flex: 1 1 55%; /* Takes up 55% of the space */
+        /* Column Base Styles */
+        .column {
             display: flex;
             flex-direction: column;
-            justify-content: space-between;
+            justify-content: center; /* Vertically center content in columns */
         }
 
+        /* Left Column: Instructions */
+        .left-column {
+            flex: 1 1 30%;
+        }
         .left-column h2 { 
             margin: 0 0 5px 0; 
             color: #1c1e21; 
             font-size: 0.9rem; 
             font-weight: 600;
+            line-height: 1.2;
         }
         .left-column p { 
             font-size: 0.8rem;
-            margin: 0 0 10px 0;
+            margin: 0;
             line-height: 1.4;
+            color: #4b4f56;
         }
-        .left-column .form-group {
-             margin-bottom: 10px;
+        
+        /* Middle Column: Paste & Preview Area */
+        #paste-area { 
+            flex: 1 1 40%; /* Make middle column largest */
+            border: 2px dashed #1877f2; /* Use a more prominent color */
+            border-radius: 8px; 
+            cursor: pointer; 
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            background-color: #f7faff;
+            overflow: hidden;
         }
-        .left-column label {
+        #paste-area:hover {
+            background-color: #eaf2ff;
+            border-color: #0d3d82;
+        }
+        #paste-area p { 
+            margin: 0; 
+            padding: 10px;
+            color: #0d3d82; 
+            font-size: 0.9rem;
+            font-weight: 500;
+            text-align: center;
+            position: relative;
+            z-index: 1;
+        }
+        #paste-area.has-image { 
+            border-style: solid; 
+            border-color: #4CAF50;
+            background-color: #fff;
+        }
+        #paste-area.has-image p {
+             display: none;
+        }
+        #preview { 
+            display: none;
+            position: absolute;
+            width: 100%; 
+            height: 100%;
+            top: 0;
+            left: 0;
+            object-fit: contain;
+            border-radius: 6px; 
+        }
+
+        /* Right Column: Inputs & Actions */
+        .right-column {
+            flex: 1 1 30%;
+            gap: 8px; /* Space between elements */
+        }
+        .right-column .form-group {
+            width: 100%;
+        }
+        .right-column label {
              display: block;
              margin-bottom: 4px;
              font-weight: 600;
              color: #4b4f56;
              font-size: 0.8rem;
         }
-        .left-column input[type="text"] { 
+        .right-column input[type="text"] { 
             width: 100%; 
             padding: 8px; 
             box-sizing: border-box; 
@@ -63,7 +122,7 @@
             border-radius: 6px; 
             font-size: 0.8rem;
         }
-        .left-column button { 
+        .right-column button { 
             background-color: #1877f2; 
             color: white; 
             width: 100%; 
@@ -74,98 +133,42 @@
             font-size: 0.9rem;
             font-weight: bold; 
         }
-        .left-column button:disabled { 
+        .right-column button:disabled { 
             background-color: #a0a0a0; 
             cursor: not-allowed; 
         }
-        .left-column #status { 
-            margin-top: 5px; 
+        .right-column #status { 
             font-weight: bold; 
             font-size: 0.75rem;
-            min-height: 1em;
+            min-height: 2.6em; /* Reserve space for 2 lines */
             line-height: 1.3;
             text-align: center;
         }
-        
-        /* Right Column: Paste & Preview Area */
-        #paste-area { 
-            flex: 1 1 45%; /* Takes up 45% of the space */
-            border: 2px dashed #ccd0d5; 
-            border-radius: 8px; 
-            cursor: pointer; 
-            transition: all 0.3s;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            position: relative;
-            background-image: url('gesamt.png'); /* Use the example image as a background hint */
-            background-size: cover;
-            background-position: center;
-            overflow: hidden;
-        }
-        #paste-area::before { /* Faint overlay to make text readable */
-            content: '';
-            position: absolute;
-            top: 0; left: 0; right: 0; bottom: 0;
-            background-color: rgba(255, 255, 255, 0.8);
-            border-radius: 6px;
-        }
-        #paste-area p { 
-            margin: 0; 
-            padding: 10px;
-            color: #333; 
-            font-size: 0.9rem;
-            font-weight: 500;
-            text-align: center;
-            position: relative; /* Ensure text is above overlay */
-            z-index: 1;
-        }
-        #paste-area.has-image { 
-            border-style: solid; 
-            border-color: #4CAF50;
-        }
-        #paste-area.has-image::before, #paste-area.has-image p {
-             display: none; /* Hide overlay and text when image is pasted */
-        }
-        #preview { 
-            display: none; /* Hidden by default */
-            position: absolute;
-            width: 100%; 
-            height: 100%;
-            top: 0;
-            left: 0;
-            object-fit: contain; /* Show the whole image */
-            border-radius: 6px; 
-        }
-
     </style>
 </head>
 <body>
     <div class="container">
-        <div class="left-column">
-            <div>
-                <h2 id="assignment-title"></h2>
-                <p id="question-text"></p>
-                <div class="form-group">
-                     <label for="studentName">Dein Identifikationscode:</label>
-                     <input type="text" id="studentName" required>
-                </div>
-            </div>
-            <div>
-                <button id="submitButton" disabled>Screenshot einreichen</button>
-                <div id="status"></div>
-            </div>
+        <div class="column left-column">
+            <h2 id="assignment-title"></h2>
+            <p id="question-text"></p>
         </div>
 
-        <div id="paste-area" class="right-column">
-            <p>Klicke hier &<br>füge den Screenshot ein<br>(Ctrl+V)</p>
+        <div class="column middle-column" id="paste-area">
+            <p>Screenshot hier einfügen<br>(Ctrl+V)</p>
             <img id="preview" alt="Screenshot Vorschau"/>
+        </div>
+
+        <div class="column right-column">
+            <div class="form-group">
+                 <label for="studentName">Dein Identifikationscode:</label>
+                 <input type="text" id="studentName" required>
+            </div>
+            <button id="submitButton" disabled>Einreichen</button>
+            <div id="status"></div>
         </div>
     </div>
 
     <script>
-        // The JavaScript from the previous step can be used here without changes.
-        // It correctly references the elements by their IDs.
         const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbx6f6zabGntalDkp4N9gQcD2XZHKK05pa3Ppmgz6Z09sMEMq6lm2SkRCd4O3RSu3FXCpw/exec'; 
 
         const studentNameInput = document.getElementById('studentName');
@@ -181,7 +184,8 @@
         const urlParams = new URLSearchParams(window.location.search);
         const assignmentIdParam = urlParams.get('assignmentId') || 'Screenshot Abgabe';
         const subIdsParam = urlParams.get('subIds') || 'Abgabe Punktzahl';
-        const question1Param = urlParams.get('question1') || 'Bitte gib deinen Code ein und füge den Screenshot mit der Gesamtpunktzahl rechts ein.';
+        // Shorter default text to fit in the smaller column
+        const question1Param = urlParams.get('question1') || 'Füge deinen Screenshot in die Mitte ein und gib rechts deinen Code an.';
 
         titleElement.textContent = subIdsParam;
         questionElement.innerHTML = question1Param;
@@ -208,7 +212,7 @@
                 };
                 reader.readAsDataURL(imageFile);
             } else { 
-                statusDiv.textContent = 'Eingefügter Inhalt ist kein Bild.'; 
+                statusDiv.textContent = 'Dies ist kein Bild.'; 
                 statusDiv.style.color = 'red'; 
             }
         }
@@ -235,7 +239,7 @@
                 if (result.status === 'success') {
                     if (result.score && result.score.includes('/')) {
                         statusDiv.style.color = 'green';
-                        statusDiv.innerHTML = `Erfolgreich! Punktzahl: <strong>${result.score}</strong> erfasst.`;
+                        statusDiv.innerHTML = `Erfolgreich!<br>Punktzahl: <strong>${result.score}</strong>`;
                     } else {
                         statusDiv.style.color = '#D83B01';
                         statusDiv.innerHTML = `Übermittelt, aber Punktzahl nicht erkannt. Bitte erneut versuchen.`;
