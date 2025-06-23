@@ -85,6 +85,9 @@
             background-color: #a0a0a0;
             cursor: not-allowed;
         }
+        .left-column #reloadButton {
+             background-color: #28a745; /* Green for new submission */
+        }
         .left-column #status {
             font-weight: bold;
             font-size: 0.75rem;
@@ -116,8 +119,8 @@
 
         /* Middle Column: Separator */
         .middle-column {
-            flex: 0 0 1px; /* Takes up minimal space */
-            background-color: #e0e0e0; /* A simple vertical line */
+            flex: 0 0 1px;
+            background-color: #e0e0e0;
         }
 
         /* Right Column: Paste & Preview Area */
@@ -171,7 +174,7 @@
     <div class="container">
         <div class="column left-column">
             <div class="header-container">
-                <a href="gesamt.png" target="_blank" class="help-btn">?</a>
+                <a href="gesamt.png" target="_blank" class="help-btn" title="Beispiel für korrekten Screenshot anzeigen">?</a>
                 <h2 id="assignment-title"></h2>
                 <p id="question-text" class="info-text"></p>
             </div>
@@ -180,6 +183,7 @@
                  <input type="text" id="studentName" required>
             </div>
             <button id="submitButton" disabled>Einreichen</button>
+            <button id="reloadButton" style="display: none;">Weitere Abgabe</button>
             <div id="status"></div>
         </div>
 
@@ -198,6 +202,7 @@
         const pasteArea = document.getElementById('paste-area');
         const previewImage = document.getElementById('preview');
         const submitButton = document.getElementById('submitButton');
+        const reloadButton = document.getElementById('reloadButton');
         const statusDiv = document.getElementById('status');
         const titleElement = document.getElementById('assignment-title');
         const questionElement = document.getElementById('question-text');
@@ -216,6 +221,7 @@
         pasteArea.addEventListener('click', () => { /* User can click to focus */ });
         submitButton.addEventListener('click', handleSubmit);
         studentNameInput.addEventListener('input', checkFormState);
+        reloadButton.addEventListener('click', () => location.reload());
 
         function handlePaste(event) {
             const items = (event.clipboardData || window.clipboardData).items;
@@ -245,7 +251,9 @@
 
         function handleSubmit() {
             if (!studentNameInput.value.trim() || !imageDataUrl) return;
-            submitButton.disabled = true; statusDiv.textContent = 'Wird übermittelt...'; statusDiv.style.color = 'black';
+            submitButton.disabled = true;
+            statusDiv.textContent = 'Wird übermittelt...';
+            statusDiv.style.color = 'black';
 
             const payload = {
                 studentName: studentNameInput.value.trim(),
@@ -266,26 +274,16 @@
                         statusDiv.style.color = '#D83B01';
                         statusDiv.innerHTML = `Übermittelt, aber Punktzahl nicht erkannt. Bitte erneut versuchen.`;
                     }
-                    resetForm();
+                    // On success, hide submit button and show the reload button
+                    submitButton.style.display = 'none';
+                    reloadButton.style.display = 'block';
                 } else { throw new Error(result.message); }
             })
             .catch(err => {
                 statusDiv.textContent = `Fehler: ${err.message}`;
                 statusDiv.style.color = 'red';
-                submitButton.disabled = false;
+                submitButton.disabled = false; // Re-enable submit button on error
             });
-        }
-
-        function resetForm() {
-            setTimeout(() => {
-                studentNameInput.value = '';
-                previewImage.src = '';
-                previewImage.style.display = 'none';
-                pasteArea.classList.remove('has-image');
-                imageDataUrl = null;
-                submitButton.disabled = true;
-                statusDiv.textContent = '';
-            }, 8000);
         }
     </script>
 </body>
