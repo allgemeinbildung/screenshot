@@ -37,109 +37,53 @@
         /* Left Column: All Controls */
         .left-column {
             flex: 1 1 50%;
-            gap: 8px; /* Creates space between the stacked items */
+            gap: 8px;
         }
-        .left-column h2 { 
-            margin: 0; 
-            color: #1c1e21; 
-            font-size: 0.9rem; 
-            font-weight: 600;
-        }
-        .left-column .info-text { 
-            font-size: 0.8rem;
-            margin: 0;
-            line-height: 1.3;
-            color: #4b4f56;
-        }
-        .left-column label {
-             display: block;
-             margin-bottom: 2px;
-             font-weight: 600;
-             color: #4b4f56;
-             font-size: 0.75rem;
-        }
-        .left-column input[type="text"] { 
-            width: 100%; 
-            padding: 8px; 
-            box-sizing: border-box; 
-            border: 1px solid #ccd0d5; 
-            border-radius: 6px; 
-            font-size: 0.8rem;
-        }
-        .left-column button { 
-            background-color: #1877f2; 
-            color: white; 
-            width: 100%; 
-            padding: 8px 12px;
-            border: none; 
-            border-radius: 6px; 
-            cursor: pointer; 
-            font-size: 0.9rem;
-            font-weight: bold; 
-        }
-        .left-column button:disabled { 
-            background-color: #a0a0a0; 
-            cursor: not-allowed; 
-        }
-        .left-column #status { 
-            font-weight: bold; 
-            font-size: 0.75rem;
-            min-height: 1.3em; 
-            line-height: 1.3;
-            text-align: center;
-        }
+        .left-column h2 { margin: 0; color: #1c1e21; font-size: 0.9rem; font-weight: 600; }
+        .left-column .info-text { font-size: 0.8rem; margin: 0; line-height: 1.3; color: #4b4f56; }
+        .left-column label { display: block; margin-bottom: 2px; font-weight: 600; color: #4b4f56; font-size: 0.75rem; }
+        .left-column input[type="text"] { width: 100%; padding: 8px; box-sizing: border-box; border: 1px solid #ccd0d5; border-radius: 6px; font-size: 0.8rem; }
+        .left-column button { background-color: #1877f2; color: white; width: 100%; padding: 8px 12px; border: none; border-radius: 6px; cursor: pointer; font-size: 0.9rem; font-weight: bold; }
+        .left-column button:disabled { background-color: #a0a0a0; }
+        .left-column #status { font-weight: bold; font-size: 0.75rem; min-height: 1.3em; line-height: 1.3; text-align: center; }
 
         /* Middle Column: Separator */
-        .middle-column {
-            flex: 0 0 1px; /* Takes up minimal space */
-            background-color: #e0e0e0; /* A simple vertical line */
-        }
+        .middle-column { flex: 0 0 1px; background-color: #e0e0e0; }
         
         /* Right Column: Paste & Preview Area */
         #paste-area { 
             flex: 1 1 50%;
             border: 2px dashed #1877f2;
             border-radius: 8px; 
-            cursor: pointer; 
-            transition: all 0.3s;
-            display: flex;
-            align-items: center;
-            justify-content: center;
+            cursor: pointer;
             position: relative;
             background-color: #f7faff;
             overflow: hidden;
         }
-        #paste-area:hover {
-            background-color: #eaf2ff;
-        }
-        #paste-area p { 
-            margin: 0; 
-            padding: 10px;
-            color: #0d3d82; 
-            font-size: 0.9rem;
-            font-weight: 500;
-            text-align: center;
-            position: relative;
-        }
-        #paste-area.has-image { 
-            border-style: solid; 
-            border-color: #4CAF50;
-            background-color: #fff;
-        }
-        #paste-area.has-image p {
-             display: none;
-        }
+        #paste-area p { margin: 0; padding: 10px; color: #0d3d82; font-size: 0.9rem; font-weight: 500; text-align: center; }
+        #paste-area.has-image { border-style: solid; border-color: #4CAF50; background-color: #fff; cursor: crosshair; }
+        #paste-area.has-image p { display: none; }
         #preview { 
             display: none;
-            position: absolute;
-            width: 100%; 
-            height: 100%;
-            top: 0;
-            left: 0;
-            object-fit: contain;
-            border-radius: 6px; 
+            width: 100%; height: 100%;
+            object-fit: contain; /* Fit the entire image inside */
         }
 
+        /* --- NEW: Zoom/Loupe Styles --- */
+        #zoom-result {
+            display: none; /* Hidden by default */
+            position: absolute;
+            top: 0px;
+            left: -216px; /* Position it to the left of the paste-area */
+            width: 200px;
+            height: 200px;
+            border: 2px solid #1877f2;
+            border-radius: 50%; /* Circular lens */
+            background-repeat: no-repeat;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+            z-index: 100;
+            pointer-events: none; /* So it doesn't interfere with mouse events */
+        }
     </style>
 </head>
 <body>
@@ -160,14 +104,15 @@
         <div class="column middle-column"></div>
 
         <div class="column right-column" id="paste-area">
-            <p>Screenshot rechts einfügen<br>(Ctrl+V)</p>
+             <div id="zoom-result"></div>
+            <p>Screenshot hier einfügen<br>(Ctrl+V)</p>
             <img id="preview" alt="Screenshot Vorschau"/>
         </div>
     </div>
 
     <script>
+        // --- Existing Elements ---
         const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbx6f6zabGntalDkp4N9gQcD2XZHKK05pa3Ppmgz6Z09sMEMq6lm2SkRCd4O3RSu3FXCpw/exec'; 
-
         const studentNameInput = document.getElementById('studentName');
         const pasteArea = document.getElementById('paste-area');
         const previewImage = document.getElementById('preview');
@@ -175,19 +120,22 @@
         const statusDiv = document.getElementById('status');
         const titleElement = document.getElementById('assignment-title');
         const questionElement = document.getElementById('question-text');
+
+        // --- New Zoom Element ---
+        const zoomResult = document.getElementById('zoom-result');
         
         let imageDataUrl = null;
-        
+
         const urlParams = new URLSearchParams(window.location.search);
         const assignmentIdParam = urlParams.get('assignmentId') || 'Screenshot Abgabe';
         const subIdsParam = urlParams.get('subIds') || 'Abgabe Punktzahl';
-        const question1Param = urlParams.get('question1') || 'Gib links deinen Code ein und füge rechts den Screenshot ein.';
-
+        const question1Param = urlParams.get('question1') || 'Gib links deinen Code ein und füge rechts den Screenshot ein. Bewege die Maus über das Bild, um es zu vergrößern.';
+        
         titleElement.textContent = subIdsParam;
         questionElement.innerHTML = question1Param;
-
+        
+        // --- Paste & Submit Logic (mostly unchanged) ---
         window.addEventListener('paste', handlePaste);
-        pasteArea.addEventListener('click', () => { /* User can click to focus */ });
         submitButton.addEventListener('click', handleSubmit);
         studentNameInput.addEventListener('input', checkFormState);
 
@@ -202,33 +150,22 @@
                 reader.onloadend = () => { 
                     imageDataUrl = reader.result; 
                     previewImage.src = imageDataUrl; 
-                    previewImage.style.display = 'block'; 
-                    pasteArea.classList.add('has-image'); 
-                    checkFormState(); 
+                    previewImage.style.display = 'block';
+                    pasteArea.classList.add('has-image');
+                    checkFormState();
+                    initializeZoom(imageDataUrl); // <<< NEW: Activate zoom functionality
                 };
                 reader.readAsDataURL(imageFile);
-            } else { 
-                statusDiv.textContent = 'Dies ist kein Bild.'; 
-                statusDiv.style.color = 'red'; 
-            }
+            } else { statusDiv.textContent = 'Dies ist kein Bild.'; statusDiv.style.color = 'red'; }
         }
         
-        function checkFormState() { 
-            submitButton.disabled = !(studentNameInput.value.trim() && imageDataUrl); 
-        }
+        function checkFormState() { submitButton.disabled = !(studentNameInput.value.trim() && imageDataUrl); }
 
         function handleSubmit() {
+            // ... (handleSubmit function is unchanged from previous version)
             if (!studentNameInput.value.trim() || !imageDataUrl) return;
             submitButton.disabled = true; statusDiv.textContent = 'Wird übermittelt...'; statusDiv.style.color = 'black';
-
-            const payload = {
-                studentName: studentNameInput.value.trim(),
-                imageData: imageDataUrl,
-                assignmentId: assignmentIdParam,
-                subIds: subIdsParam,
-                question1: question1Param
-            };
-
+            const payload = { studentName: studentNameInput.value.trim(), imageData: imageDataUrl, assignmentId: assignmentIdParam, subIds: subIdsParam, question1: question1Param };
             fetch(SCRIPT_URL, { method: 'POST', mode: 'cors', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify(payload) })
             .then(res => res.json())
             .then(result => {
@@ -251,6 +188,7 @@
         }
         
         function resetForm() {
+            // ... (resetForm is mostly unchanged)
             setTimeout(() => {
                 studentNameInput.value = '';
                 previewImage.src = '';
@@ -259,7 +197,57 @@
                 imageDataUrl = null;
                 submitButton.disabled = true; 
                 statusDiv.textContent = '';
+                destroyZoom(); // <<< NEW: Deactivate zoom functionality
             }, 8000);
+        }
+
+        // --- NEW: ZOOM FUNCTIONALITY ---
+
+        function initializeZoom(imageUrl) {
+            // Get the natural (original) size of the image first
+            const originalImage = new Image();
+            originalImage.onload = function() {
+                const naturalWidth = this.width;
+                const naturalHeight = this.height;
+
+                // Set the background of our zoom pane
+                zoomResult.style.backgroundImage = `url('${imageUrl}')`;
+                
+                // Calculate the magnified background size
+                const ratioX = naturalWidth / previewImage.clientWidth;
+                const ratioY = naturalHeight / previewImage.clientHeight;
+                zoomResult.style.backgroundSize = `${naturalWidth}px ${naturalHeight}px`;
+
+                // Add event listeners to the paste area
+                pasteArea.addEventListener('mousemove', moveLens);
+                pasteArea.addEventListener('mouseenter', () => { zoomResult.style.display = 'block'; });
+                pasteArea.addEventListener('mouseleave', () => { zoomResult.style.display = 'none'; });
+
+                function moveLens(e) {
+                    e.preventDefault();
+                    
+                    // Get cursor position relative to the preview image
+                    const rect = e.target.getBoundingClientRect();
+                    let x = e.clientX - rect.left;
+                    let y = e.clientY - rect.top;
+
+                    // Calculate background position for the zoom pane
+                    // The position is moved negatively, proportional to the cursor's location
+                    let bgPosX = -(x * ratioX - zoomResult.clientWidth / 2);
+                    let bgPosY = -(y * ratioY - zoomResult.clientHeight / 2);
+                    
+                    zoomResult.style.backgroundPosition = `${bgPosX}px ${bgPosY}px`;
+                }
+            };
+            originalImage.src = imageUrl;
+        }
+
+        function destroyZoom() {
+            // To prevent memory leaks, we should remove the listeners when the form resets
+            // A simple way is to replace the node with a clone of itself
+            pasteArea.parentNode.replaceChild(pasteArea.cloneNode(true), pasteArea);
+            // We also need to hide the zoom pane
+            document.getElementById('zoom-result').style.display = 'none';
         }
     </script>
 </body>
